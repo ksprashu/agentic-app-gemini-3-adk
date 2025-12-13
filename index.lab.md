@@ -1,16 +1,3 @@
----
-id: agentic-app-gemini-3-adk
-description: Build a fun, bargaining "Shopkeeper" Agent using Gemini 3 and ADK.
-authors: Prashanth Subrahmanyam
-categories: cloud-aiml
-keywords: docType:Codelab, category:Cloud, skill:Beginner, language:Python, category:AiAndMachineLearning, product:CloudRun, product:GoogleCloud
-tags: gemini, adk, agentic, cloud-run, python, ai, machine-learning, google-cloud
-feedback_link: https://github.com/googlecodelabs/feedback/issues/new?title=[agentic-app-gemini-3-adk]%20Feedback&labels=adk&assignees=ksprashu
-layout: paginated
-project: /devsite/_project.yaml
-book: /devsite/_book.yaml
-
----
 
 # Build your own "Bargaining Shopkeeper" Agent with Gemini 3 and ADK
 
@@ -744,9 +731,13 @@ You might have `adk web` running in your current terminal from the previous step
 
 In your **NEW** terminal window:
 
-1.  Check if you are already inside the Gemini CLI (look for the `gemini>` prompt).
-2.  If you are, type `/quit` to exit to the standard shell.
-3.  Ensure you are in the project folder:
+1.  **Set your API Key again:** (Environment variables don't always carry over to new tabs)
+    ```bash
+    export GEMINI_API_KEY="AIzaSy...<your-key-here>..."
+    ```
+2.  Check if you are already inside the Gemini CLI (look for the `gemini>` prompt).
+3.  If you are, type `/quit` to exit to the standard shell.
+4.  Ensure you are in the project folder:
     ```bash
     cd raju-shop
     ```
@@ -831,12 +822,42 @@ Run this `curl` command in your **Cloud Shell terminal** (or local terminal):
 ```bash
 curl -X POST <YOUR_SERVICE_URL>/run \
   -H "Content-Type: application/json" \
-  -d '{"query": "Hello Raju"}'
+  -d '{
+    "appName": "app",
+    "userId": "test-user",
+    "sessionId": "test-session",
+    "newMessage": {
+      "role": "user",
+      "parts": [{"text": "Hello Raju"}]
+    }
+  }'
 ```
 
 *(Replace `<YOUR_SERVICE_URL>` with your actual URL)*.
 
-*   **Success:** You get a JSON response like `{"text": "Hello my friend!..."}`.
+**Understanding the Agent Protocol:**
+The ADK uses a specific JSON format.
+*   **Request:** Sends the user input wrapped in a `newMessage` object.
+*   **Response:** Returns a list of "turns". You are looking for the final text response.
+
+**Sample Response:**
+```json
+[
+  {
+    "content": {
+      "parts": [
+        {
+          "text": "Hello my friend! Welcome to Raju's Royal Artifacts. Best prices in the bazaar!"
+        }
+      ],
+      "role": "model"
+    },
+    ...
+  }
+]
+```
+
+*   **Success:** You get a JSON array response like above.
 *   **Failure (500 Error):** This usually means the **API Key** is missing or invalid.
 
 > aside negative
@@ -878,15 +899,34 @@ Instead of writing code line-by-line, we will ask an AI agent to do it for us us
 
 1. Paste the following prompt into the chat:
 
-   > "Create a single file HTML chat interface named `index.html`. It should have a colorful header that says 'Raju's Royal Artifacts'. It should look like an Indian market stall with orange and pink colors.
-   >
-   > **Backend Integration:**
-   > The chat should send messages to my deployed agent at: `<YOUR_DEPLOYED_AGENT_URL>`
-   > *   **Endpoint:** POST `<YOUR_DEPLOYED_AGENT_URL>/run`
-   > *   **Body:** JSON object `{"query": "user message here"}`
-   > *   **Response:** Display the text from the API response."
+```text
+Create a single file HTML chat interface named `index.html`. It should have a colorful header that says 'Raju's Royal Artifacts'. It should look like an Indian market stall with orange and pink colors.
 
-   *(Make sure to replace `<YOUR_DEPLOYED_AGENT_URL>` with your actual Service URL from the Deployment step!)*
+**Backend Integration:**
+The chat should send messages to my deployed agent at: <YOUR_DEPLOYED_AGENT_URL>
+
+**1. Request Format:**
+*   **Endpoint:** POST <YOUR_DEPLOYED_AGENT_URL>/run
+*   **Body:**
+    {
+      "appName": "app",
+      "userId": "web-user",
+      "sessionId": "generate-random-uuid",
+      "newMessage": {
+        "role": "user",
+        "parts": [{"text": "USER_INPUT_HERE"}]
+      }
+    }
+
+**2. Response Parsing:**
+The API returns a JSON ARRAY of turn objects. You must:
+1.  Parse the JSON array.
+2.  Find the LAST object in the array.
+3.  Extract the text from: `lastObject.content.parts[0].text`.
+4.  Display this text as the agent's reply.
+```
+
+   (Make sure to replace the placeholder URL with your actual Service URL from the Deployment step!)
 
 1. Watch as the agent writes the code for you! You can switch to the **[Editor View](https://antigravity.google/docs/editor)** to see the file being created in real-time.
 
@@ -977,9 +1017,13 @@ Duration: 5:00
 To avoid incurring unnecessary charges to your Google Cloud account for the resources used in this codelab, follow these steps.
 
 > aside positive
-**Continue Learning with Google Cloud Free Tier!**
-Many Google Cloud products, including Cloud Run, offer a [Free Tier](https://cloud.google.com/free) that allows you to use resources up to a certain limit without charge. If you're still within your [Google Cloud Free Trial](https://cloud.google.com/free), you have even more flexibility!
-You can continue to use your current Google Cloud Project (`raju-shop-agent`) and build upon your agent without losing any progress, as long as your usage stays within the Free Tier limits.
+> **Continue Learning with Google Cloud Free Tier!**
+>
+> Many Google Cloud products, including Cloud Run, offer a [Free Tier](https://cloud.google.com/free) that allows you to use resources up to a certain limit without charge.
+>
+> If you're still within your [Google Cloud Free Trial](https://cloud.google.com/free), you have even more flexibility!
+>
+> You can continue to use your current Google Cloud Project (`raju-shop-agent`) and build upon your agent without losing any progress, as long as your usage stays within the Free Tier limits.
 
 ### **1. Undeploy Cloud Run Services (Optional Cost Saving)**
 
