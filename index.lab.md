@@ -1,4 +1,3 @@
-
 # Build your own "Bargaining Shopkeeper" Agent with Gemini 3 and ADK
 
 ## Overview
@@ -809,61 +808,12 @@ It will take 2-3 minutes. Once done, you will see a success message like this:
 
 Once the deployment is complete, Gemini CLI will provide a **Service URL**. Copy this URL.
 
-**Step A: Browser Check (Is it alive?)**
+**Browser Check (Is it alive?)**
 Paste the URL into your browser.
 *   **Success:** You should see the **FastAPI Documentation (Swagger UI)** or a generic ADK landing page. This confirms your Cloud Run service is running and accessible.
 *   **Failure:** If you get a 403 Forbidden, you might have forgotten to allow "unauthenticated invocations" in your deployment prompt.
 
-**Step B: API Check (Is Raju home?)**
-The browser only checks the server. To check if Raju (the agent) is working and if your API Key is valid, we must send a message.
-
-Run this `curl` command in your **Cloud Shell terminal** (or local terminal):
-
-```bash
-curl -X POST <YOUR_SERVICE_URL>/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "appName": "app",
-    "userId": "test-user",
-    "sessionId": "test-session",
-    "newMessage": {
-      "role": "user",
-      "parts": [{"text": "Hello Raju"}]
-    }
-  }'
-```
-
-*(Replace `<YOUR_SERVICE_URL>` with your actual URL)*.
-
-**Understanding the Agent Protocol:**
-The ADK uses a specific JSON format.
-*   **Request:** Sends the user input wrapped in a `newMessage` object.
-*   **Response:** Returns a list of "turns". You are looking for the final text response.
-
-**Sample Response:**
-```json
-[
-  {
-    "content": {
-      "parts": [
-        {
-          "text": "Hello my friend! Welcome to Raju's Royal Artifacts. Best prices in the bazaar!"
-        }
-      ],
-      "role": "model"
-    },
-    ...
-  }
-]
-```
-
-*   **Success:** You get a JSON array response like above.
-*   **Failure (500 Error):** This usually means the **API Key** is missing or invalid.
-
-> aside negative
-**Troubleshooting 500 Errors:**
-If the curl command fails, it's likely that the `GOOGLE_API_KEY` environment variable didn't get passed correctly to Cloud Run.
-**Fix it with Gemini:** Ask the CLI: *"My deployed service is returning error 500. Check the logs for raju-agent and help me fix the missing API key variable."*
+We will test the actual bargaining logic in the next step by building a proper frontend!
 
 ### Summary
 
@@ -905,25 +855,14 @@ Create a single file HTML chat interface named `index.html`. It should have a co
 **Backend Integration:**
 The chat should send messages to my deployed agent at: <YOUR_DEPLOYED_AGENT_URL>
 
-**1. Request Format:**
-*   **Endpoint:** POST <YOUR_DEPLOYED_AGENT_URL>/run
-*   **Body:**
-    {
-      "appName": "app",
-      "userId": "web-user",
-      "sessionId": "generate-random-uuid",
-      "newMessage": {
-        "role": "user",
-        "parts": [{"text": "USER_INPUT_HERE"}]
-      }
-    }
+**API Protocol:**
+Please refer to the ADK API Documentation to understand how to invoke the agent:
+https://google.github.io/adk-docs/runtime/api-server/#local-testing
 
-**2. Response Parsing:**
-The API returns a JSON ARRAY of turn objects. You must:
-1.  Parse the JSON array.
-2.  Find the LAST object in the array.
-3.  Extract the text from: `lastObject.content.parts[0].text`.
-4.  Display this text as the agent's reply.
+**Requirements:**
+1.  **Initialize:** On page load, use the API to create a new session for `appName="app"` and `userId="web-user"`.
+2.  **Chat:** When the user sends a message, use the `/run` endpoint with the session ID you obtained.
+3.  **Display:** Parse the response and show the agent's reply.
 ```
 
    (Make sure to replace the placeholder URL with your actual Service URL from the Deployment step!)
@@ -1051,3 +990,4 @@ If you want to ensure absolutely no further expenses and completely remove all r
 1. Go to the [Projects page](https://console.cloud.google.com/iam-admin/projects) in the Google Cloud Console.
 2. Select your project (`raju-shop-agent`) and click **Delete**.
 3. Follow the prompts to confirm project deletion.
+
